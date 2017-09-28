@@ -11,10 +11,20 @@ lazy val lagomFilter = (project in file("."))
     LocalProject("lagomFilterImpl")
   )
 
+lazy val filter = (project in file("filter"))
+  .settings(
+    version := "1.0-SNAPSHOT",
+    libraryDependencies ++= Seq(
+      lagomScaladslApi,
+      lagomScaladslServer % Optional
+    )
+  )
+
 lazy val lagomFilterApi = (project in file("lagom-filter-api"))
   .settings(
     libraryDependencies += lagomScaladslApi
   )
+  .dependsOn(filter)
 
 lazy val lagomFilterImpl = (project in file("lagom-filter-impl"))
   .enablePlugins(LagomScala)

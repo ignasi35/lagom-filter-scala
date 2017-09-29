@@ -39,46 +39,25 @@ case class SomePrincipal(userName: String, groups: String*) extends Principal {
 }
 
 
-object SomeHeaderFilter extends HeaderFilter {
+class SomeHeaderFilter extends HeaderFilter {
   override def transformClientRequest(request: RequestHeader) = request
 
   override def transformClientResponse(response: ResponseHeader, request: RequestHeader) = response
 
   override def transformServerRequest(request: RequestHeader) = {
-    println(s"\ntransforming server request\n------------------------------------------")
-//    request.principal match {
-//      case Some(userPrincipal: SomePrincipal) => request.withHeader("User-Name", userPrincipal.userName)
-//      case other => request
-//    }
-    request.headers.foreach {
-      case (key, value) => println(s"Request Header: $key, $value")
-    }
     request.getHeader(Http.HeaderNames.AUTHORIZATION) match {
       case Some(header) =>
-        println(s"Required header $header is present, now do authentication...")
-        // Do your authentication here, or alternatively, inject a dependency that does it for you...
-
         request.withPrincipal(SomePrincipal(header, "group1", "group2"))
       case None =>
-        println("Required headers are NOT present")
+        request
     }
-    request
   }
 
-  override def transformServerResponse(response: ResponseHeader, request: RequestHeader) = {
-    println(s"\ntransforming server response\n------------------------------------------")
-    request.headers.foreach {
-      case (key, value) => println(s"Request Header: $key, $value")
-    }
-    val responseWithHeaders = response.addHeader(Http.HeaderNames.WWW_AUTHENTICATE, "Negotiate")
-    responseWithHeaders.headers.foreach {
-      case (key, value) => println(s"Response Header: $key, $value")
-    }
-    responseWithHeaders
-  }
+  // I removed the code from here since this class is not responsible for setting the Header in the response.
+  // A HeaderFilter should only transform data from a format to another. I think the Response Header should be set
+  // in the SomeFilter (see the java example I sent yesterday)
+  override def transformServerResponse(response: ResponseHeader, request: RequestHeader) = response
 
-
-  lazy val Composed = HeaderFilter.composite(SomeHeaderFilter, UserAgentHeaderFilter)
 }
 
 
@@ -88,12 +67,6 @@ object ServerSecurity {
     ServerServiceCall.compose { requestHeader =>
       println(s"authenticated headers: ${requestHeader.headers.mkString(",")}")
       serviceCall("something")
-//      requestHeader.principal match {
-//        case Some(userPrincipal: SomePrincipal) =>
-//          serviceCall(userPrincipal.userName)
-//        case other =>
-//          throw Forbidden("User not authenticated")
-//      }
     }
 
 }
@@ -104,8 +77,8 @@ object ClientSecurity {
     * Authenticate a client request.
     */
   def authenticate(userName: String): RequestHeader => RequestHeader = { request =>
-    println("authenticate headers: ${requestHeader.headers.mkString(",")}")
+    println("authenticate headers: ${requestHeader.headers.mkString(", ")}")
     request
-//    request.withPrincipal(SomePrincipal.of(userId, request.principal))
+    //    request.withPrincipal(SomePrincipal.of(userId, request.principal))
   }
 }

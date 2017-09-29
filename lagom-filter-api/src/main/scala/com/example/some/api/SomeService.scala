@@ -15,12 +15,8 @@ trait SomeService extends Service {
         .withCalls(
           pathCall("/api/hello/:id", hello _)
         )
+      .withHeaderFilter(new SomeHeaderFilter())
       .withAutoAcl(true)
-      // The following is NOT necessary for SPNEGO and can be removed
-      .withAcls(
-        ServiceAcl.forMethodAndPathRegex(Method.OPTIONS, "/api/hello/.*")
-      )
-      .withHeaderFilter(SomeHeaderFilter.Composed)
   }
 }
 
